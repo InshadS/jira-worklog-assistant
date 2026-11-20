@@ -23,10 +23,10 @@ one the user named or the one whose URL appears in their Slack messages
 
 ## The user's local timezone
 
-Slack search results print times in the user's local zone (e.g. `10:35:25 IST`), and
-the Calendar `list_events` response has a top-level `timeZone`. Prefer Calendar's
-IANA name; otherwise map the Slack abbreviation (IST → Asia/Kolkata, GST → Asia/Dubai,
-etc.). If they disagree or are missing, ask.
+Slack search results print times in the user's local zone (e.g. `10:35:25 IST`).
+Map the abbreviation to an IANA name (IST → Asia/Kolkata, GST → Asia/Dubai, etc.).
+If calendar is turned on, its `list_events` response also has a top-level
+`timeZone` you can use to confirm. If it's ambiguous or missing, ask.
 
 Local and Jira zones often differ (e.g. Asia/Kolkata vs Asia/Dubai, 1h30m apart).
 Convert with:

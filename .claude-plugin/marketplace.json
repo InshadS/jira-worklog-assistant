@@ -8,7 +8,7 @@
     {
       "name": "jira-worklog-assistant",
       "source": "./",
-      "description": "Analyse your day from Slack, Jira and Calendar, propose Jira worklogs, log them on confirmation, and sanity-check your timesheet."
+      "description": "Analyse your day from Slack and Jira (calendar optional), propose Jira worklogs, log them on confirmation, and sanity-check your timesheet."
     }
   ]
 }

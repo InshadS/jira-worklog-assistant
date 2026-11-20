@@ -14,7 +14,7 @@ to fix.
    field IDs): original estimate, time spent (all authors), story points, start date,
    due date, assignee. Large results may be saved to a file — use `jq`.
 4. Ask about leave/holidays for weekdays with no logs before calling them gaps
-   (or use Calendar out-of-office events if available). The user's answer wins.
+   (or, if calendar is turned on, use its out-of-office events). The user's answer wins.
 5. Write the input JSON and run `scripts/sanity.py` (schema in the script's
    docstring). It prints the report tables and a list of issues.
 6. Present the report, then the fixes.

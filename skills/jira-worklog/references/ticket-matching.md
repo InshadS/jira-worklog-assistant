@@ -35,7 +35,7 @@ line ("ABC-41 ended Nov 12, so today's follow-up on that issue goes on the Opera
 
 - Fill the gap between existing logs and the daily target; never re-log time that's
   already there.
-- Calendar meetings: their real duration.
+- Calendar meetings (only when calendar is turned on): their real duration.
 - Slack: estimate from the span of related messages, how deep the work was (an RCA
   write-up or a PR = more; a one-line redirect = little), and the gaps between bursts.
 - Round to 30m. The day must sum exactly to the target.

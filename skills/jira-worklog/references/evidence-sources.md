@@ -41,7 +41,11 @@ say "no <source> connector, skipping" and carry on.
 - Ticket keys found in Slack: fetch them with `key in (...)` to get summary, assignee,
   status, estimate, story points, start date, due date.
 
-## 4. Google Calendar (if connected)
+## 4. Google Calendar (opt-in, off by default)
+
+Use this section only when the user has asked to include their calendar in this
+conversation. Otherwise skip it entirely — don't call Calendar tools — and rely on
+Slack signals for calls and meetings.
 
 - `list_events` with `startTime: "<day>T00:00:00"`, `endTime: "<next day>T00:00:00"`,
   `orderBy: "startTime"` (no offset — the server uses the user's calendar tz).
@@ -62,4 +66,4 @@ say "no <source> connector, skipping" and carry on.
 
 Don't infer work from other people's messages that the user didn't take part in,
 and don't read DMs between other people. The user's own messages, the threads they
-replied in, and their calendar are enough.
+replied in, and (if opted in) their calendar are enough.

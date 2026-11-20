@@ -1,16 +1,16 @@
 ---
 name: jira-worklog
-description: Analyse what someone actually worked on (from their Slack messages, Jira activity and Google Calendar meetings) and turn it into accurate Jira worklogs, then sanity-check their timesheet. Use this whenever the user wants to fill, backfill, review or fix Jira worklogs or a Clockwork/Tempo-style timesheet: "analyse my work for nov 17", "log my hours for yesterday", "fill my timesheet gaps this week", "sanity check last week's logs", "which tickets can I log against", "move these logs to another ticket", or anything about hitting a daily hours target in Jira. Use it even when the user doesn't say "worklog" but is clearly talking about logging time on Jira tickets.
+description: Analyse what someone actually worked on (from their Slack messages and Jira activity, optionally their Google Calendar) and turn it into accurate Jira worklogs, then sanity-check their timesheet. Use this whenever the user wants to fill, backfill, review or fix Jira worklogs or a Clockwork/Tempo-style timesheet: "analyse my work for nov 17", "log my hours for yesterday", "fill my timesheet gaps this week", "sanity check last week's logs", "which tickets can I log against", "move these logs to another ticket", or anything about hitting a daily hours target in Jira. Use it even when the user doesn't say "worklog" but is clearly talking about logging time on Jira tickets.
 ---
 
 # Jira Worklog Assistant
 
-Turns a person's real day (Slack messages, Jira activity, calendar meetings) into
+Turns a person's real day (Slack messages and Jira activity) into
 Jira worklogs that hold up to review: each entry is on a ticket whose dates cover
 it, the day adds up to the target, and nothing is written until the person says so.
 
-Work only with the current user's own data — their messages, their meetings, their
-worklogs. Never read or summarise a teammate's private conversations beyond the
+Work only with the current user's own data — their messages, their worklogs, and
+(only when they opt in) their calendar. Never read or summarise a teammate's private conversations beyond the
 threads the user took part in, and never post anything to Slack.
 
 ## Modes
@@ -30,7 +30,7 @@ Pick the mode from the request. Several can chain in one conversation.
 
 Read `references/detect-context.md` and resolve: Atlassian cloudId, Jira accountId,
 **Jira profile timezone** (worklog `started` times use it), the user's **local
-timezone** (Slack and Calendar show times in it), Slack user ID, the site's
+timezone** (Slack shows times in it), Slack user ID, the site's
 Story Points / Start date custom-field IDs, and the catch-all ticket for each date.
 
 Settings come from the prompt when given, otherwise defaults:
@@ -38,6 +38,10 @@ Settings come from the prompt when given, otherwise defaults:
 - catch-all ticket pattern: summary contains **"Operations"**, assigned to the user,
   dates covering the day ("use ABC-900 for misc" overrides)
 - leave / holidays: none assumed; ask when a weekday has no activity at all
+- calendar: **off**. Turn it on only when the user asks in this conversation
+  ("include my calendar", "use my meetings", "check calendar too"); once on, keep
+  it on for the rest of the conversation unless they turn it off. Don't call any
+  Calendar tool while it's off, even if the connector is installed.
 
 ## Step 1: Gather evidence for a day
 
@@ -47,11 +51,13 @@ Read `references/evidence-sources.md`. In short, collect in parallel:
    message only makes sense with context ("I'm looking into the above issue").
 3. **Jira**: tickets the user is assigned/reporter on that were updated that day, and
    any ticket keys mentioned in Slack.
-4. **Calendar** (if the Google Calendar connector is present): events that day.
+4. **Calendar — only if the user turned it on** (see Step 0): events that day.
    Treat an event as attended when the user organised or accepted it, or when its
    Meet code appears in their Slack messages; RSVP "needsAction" alone is not proof
    either way. Skip declined events.
 
+Slack and Jira are the default sources. Calls and meetings still show up there
+("joining", Meet links, "on call with …") and are sized from the message gaps.
 If a source is unavailable, say which and continue with the rest.
 
 ## Step 2: Build themes and match tickets
@@ -71,7 +77,7 @@ that matter most:
 ## Step 3: Propose (never write in this step)
 
 Fill the day to the target with whole 30-minute blocks, sized by evidence weight
-(meeting durations from Calendar are exact; Slack bursts are estimates). Show:
+(Slack bursts are estimates; with calendar on, meeting durations are exact). Show:
 
 ```
 **Proposed <Day> <Mon DD> logs (<N>h, Jira time <±HH:MM>)**
