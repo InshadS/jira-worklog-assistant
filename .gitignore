@@ -1,0 +1,6 @@
+# Local test cases contain organisation-specific data
+skills/jira-worklog/evals/
+*-workspace/
+__pycache__/
+*.pyc
+.DS_Store

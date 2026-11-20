@@ -1,0 +1,20 @@
+{
+  "name": "jira-worklog-assistant",
+  "version": "0.1.0",
+  "description": "Turn your Slack, Jira and Google Calendar activity into accurate Jira worklogs, and sanity-check your timesheet against daily targets and ticket dates.",
+  "author": {
+    "name": "InshadS",
+    "url": "https://github.com/InshadS"
+  },
+  "keywords": [
+    "jira",
+    "worklog",
+    "timesheet",
+    "clockwork",
+    "slack",
+    "calendar"
+  ],
+  "homepage": "https://github.com/InshadS/jira-worklog-assistant",
+  "repository": "https://github.com/InshadS/jira-worklog-assistant",
+  "license": "MIT"
+}
