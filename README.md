@@ -60,8 +60,9 @@ you:    log, but make the prod support 1.5h and the review block 1h
 - **Can't delete.** The Jira connector has no delete-worklog operation, so the skill
   lists exact worklog IDs for you to delete in Jira, then re-checks.
 - **Privacy.** Uses only your own messages, the threads you took part in, your
-  worklogs, and your calendar only if you turn it on. It never posts to Slack. If it notices credentials in
-  a message you sent, it tells you so you can remove it and rotate the secret.
+  worklogs, and your calendar only if you turn it on. It never posts to Slack.
+  If it notices credentials in a message you sent, it tells you so you can remove
+  it and rotate the secret.
 
 ## Prerequisites
 
@@ -97,8 +98,8 @@ Detected on every run; nothing to configure. Override in your prompt when needed
 |---|---|---|
 | Daily target | 7h | "I work 8h days" |
 | Catch-all ticket | Assigned to you, summary contains "Operations", dates cover the day | "use ABC-900 for misc work" |
-| Leave / holidays | Asks when a weekday has no activity |
-| Calendar | Off | "include my calendar" / "use my meetings" | "16 and 18 were leave" |
+| Leave / holidays | Asks when a weekday has no activity | "16 and 18 were leave" |
+| Calendar | Off | "include my calendar" / "use my meetings" |
 | Jira site | The only one you can access, or asks | "use the acme site" |
 
 ## Repository layout
