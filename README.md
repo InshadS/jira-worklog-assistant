@@ -119,6 +119,7 @@ skills/jira-worklog/
   scripts/
     timebounds.py          epoch-ms bounds and timezone conversion
     sanity.py              timesheet check report from worklog + ticket JSON
+    compact.py             shrinks large saved Jira results to a short table
 ```
 
 The helper scripts work standalone:
@@ -131,12 +132,10 @@ python3 skills/jira-worklog/scripts/sanity.py input.json   # schema in the scrip
 
 ## Status and roadmap
 
-v0.2 — calendar is now opt-in (off by default). v0.1 was tested against a real Jira/Slack/Calendar setup: analyse a day, backfill,
+v0.3 — about 50% less tool output per run (mode-scoped references, lean Jira queries, `compact.py`); sanity report shows today as in progress, per-person over-estimate split and non-assigned tickets. v0.2 made calendar opt-in. v0.1 was tested against a real Jira/Slack/Calendar setup: analyse a day, backfill,
 weekly sanity check, and the "never write without confirmation" guard.
 
 Planned:
-- Per-author breakdown on over-estimate tickets in the sanity report
-- Show "today" as in progress instead of short
 - GitHub PRs / commits as an evidence source
 
 Issues and pull requests welcome.

@@ -1,69 +1,63 @@
 # Evidence sources
 
-Gather all sources for a day in parallel. Each is optional: if a tool is missing,
-say "no <source> connector, skipping" and carry on.
+Gather in parallel. Each source is optional — if a tool is missing, say so and
+continue. Field lists below are deliberately short: extra fields (assignee objects,
+avatars, descriptions) are the main source of wasted tokens.
 
 ## 1. Existing worklogs (always)
 
-- Which issues: `searchJiraIssuesUsingJql` with
-  `worklogAuthor = currentUser() AND worklogDate = "<YYYY-MM-DD>"`
-  (or `>=`/`<=` for a range).
-- The entries: `executeRead` → `listJiraIssueWorklogs` per issue, with
-  `startedAfter` / `startedBefore` as epoch ms in the **Jira timezone**
-  (`scripts/timebounds.py bounds <start> <end> --tz <jira tz>`). Filter to the
-  user's own entries by author; other people log on shared tickets.
-- `responseFields: ["worklogs.id","worklogs.author.displayName",
-  "worklogs.timeSpent","worklogs.timeSpentSeconds","worklogs.started","worklogs.comment"]`
-  keeps responses small.
+- Which issues: `searchJiraIssuesUsingJql`,
+  `worklogAuthor = currentUser() AND worklogDate = "<YYYY-MM-DD>"` (or `>=`/`<=`),
+  `fields: ["summary"]`. No issues → nothing logged; skip step 2.
+- Entries: `executeRead` `listJiraIssueWorklogs` per issue, with `startedAfter` /
+  `startedBefore` from `scripts/timebounds.py bounds … --tz <Jira tz>` and
+  `responseFields: ["worklogs.id","worklogs.author.accountId","worklogs.timeSpentSeconds","worklogs.started"]`.
+  Keep only entries whose author is the user. Add `worklogs.comment` only when you
+  need to show what an existing entry was.
 
-## 2. Slack (primary evidence)
+## 2. Slack (primary)
 
-- `slack_search_public_and_private` with `filters: "from:<@USERID> on:YYYY-MM-DD"`,
+- `slack_search_public_and_private`: `filters: "from:<@USERID> on:YYYY-MM-DD"`,
   `sort: "timestamp"`, `sort_dir: "asc"`, `response_format: "concise"`,
-  `natural_language_query: ""`. Page with `cursor` until "No more pages". A busy day
-  is 3–5 pages; stopping early loses the afternoon.
-- Read a thread (`slack_read_thread`, with `oldest` set to the day's start) when the
-  user's message is a reply that needs context — e.g. "I'm looking into the above
-  issue", "regarding point 7". Thread parents usually name the issue or ticket.
-- Signals worth extracting: ticket keys (`ABC-1234`), PR links/numbers, service and
-  env names (Stage/UAT/Prod), people involved, Meet links (`meet.google.com/xxx-xxxx-xxx`
-  → ad-hoc call), "joining"/"on call" messages (meeting time), root-cause write-ups
-  (heavy analysis time), "merged"/"deployed"/"raised a PR" (delivery work).
-- Short replies ("ok", "yes", "Joining") still mark time ranges even if they carry
-  little content.
+  `include_context: false`, `natural_language_query: ""`. Page with `cursor` until
+  "No more pages" — a busy day is 2–5 pages; stopping early loses the afternoon.
+- Don't re-run the same search in detailed format. If one message needs context
+  ("looking into the above issue", "regarding point 7"), read that thread with
+  `slack_read_thread` (`oldest` = day start, `limit: 30`, `response_format:
+  "concise"`). Budget about 3 thread reads a day; prefer the ones behind the biggest
+  bursts of activity.
+- Signals: ticket keys, PR numbers, service/env names, people, Meet links and
+  "joining"/"on call" (meeting time), RCA write-ups (deep work), "merged"/"deployed"
+  (delivery). Short replies still mark time ranges.
 
-## 3. Jira activity
+## 3. Jira tickets
 
-- Tickets touched that day:
-  `(assignee = currentUser() OR reporter = currentUser() OR assignee WAS currentUser()
-  DURING ("<day>","<next day>")) AND updated >= "<day>" AND updated < "<next day>"`.
-  Note: `updatedBy(...)` inside an OR is rejected by some sites — use the form above.
-- Ticket keys found in Slack: fetch them with `key in (...)` to get summary, assignee,
-  status, estimate, story points, start date, due date.
+- Touched that day:
+  `(assignee = currentUser() OR reporter = currentUser()) AND updated >= "<day>" AND updated < "<next day>"`
+  (`updatedBy()` inside OR fails on some sites).
+- Keys from Slack plus the above, in one call: `key in (...)` with
+  `fields: ["summary","status","duedate","timeoriginalestimate","timespent","<storyPointsId>","<startDateId>"]`.
+- Whose ticket: one more cheap call, `key in (...) AND assignee = currentUser()`,
+  `fields: ["summary"]` — the keys it returns are the user's. Don't request the
+  `assignee` field; its avatar URLs are large.
 
 ## 4. Google Calendar (opt-in, off by default)
 
-Use this section only when the user has asked to include their calendar in this
-conversation. Otherwise skip it entirely — don't call Calendar tools — and rely on
-Slack signals for calls and meetings.
+Only when the user asked to include their calendar in this conversation; otherwise
+skip entirely and rely on Slack call/meeting signals.
 
-- `list_events` with `startTime: "<day>T00:00:00"`, `endTime: "<next day>T00:00:00"`,
-  `orderBy: "startTime"` (no offset — the server uses the user's calendar tz).
-- Attendance: organiser, `responseStatus: accepted`, or the event's
-  `conferenceUrl` Meet code appears in the user's Slack that day → attended.
-  `needsAction` alone is common for people who never click RSVP — treat as
-  "probably attended" if it's a recurring team meeting, otherwise uncertain and
-  mention it. `declined` → skip.
-- Meeting durations are the most reliable time numbers you have; use them.
-- Recurring stand-ups and team syncs go on the catch-all ticket unless the
-  meeting is clearly about one ticket.
-- `OUT_OF_OFFICE` events or all-day "Leave"/"Holiday" events mark leave days.
-- An attachment titled "Notes by Gemini" (a Google Doc) can be read with the Google
-  Drive connector's `read_file_content` for meeting topics. Use it only to write a
-  better note; don't quote it.
+- `list_events`, `startTime: "<day>T00:00:00"`, `endTime: "<next day>T00:00:00"`,
+  `orderBy: "startTime"`, `pageSize: 50` (no offset; server uses the calendar tz).
+  Use only summary, start, end, organizer/self responseStatus, conferenceUrl,
+  eventType, attachments — ignore the rest.
+- Attended: organiser, `accepted`, or its Meet code appears in the user's Slack
+  that day. `needsAction` alone: recurring team meeting → probably attended (say
+  so once); otherwise uncertain. `declined` → skip.
+- Meeting durations are exact; recurring stand-ups/syncs go on the catch-all unless
+  clearly about one ticket. `OUT_OF_OFFICE` or all-day "Leave"/"Holiday" → leave.
+- A "Notes by Gemini" attachment can be read with Google Drive `read_file_content`
+  to improve a note; don't quote it.
 
-## What not to use
+## Not used
 
-Don't infer work from other people's messages that the user didn't take part in,
-and don't read DMs between other people. The user's own messages, the threads they
-replied in, and (if opted in) their calendar are enough.
+Other people's messages the user didn't take part in, and DMs between others.

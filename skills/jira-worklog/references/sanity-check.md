@@ -1,55 +1,55 @@
 # Sanity check
 
-Answer "is my timesheet for this range clean?" with numbers, then list exactly what
-to fix.
+Answer "is my timesheet for this range clean?" with numbers, then the exact fixes.
+No Slack needed.
 
 ## Steps
 
-1. Resolve the range ("last week" = previous Mon–Fri; "this week" = current Mon–today)
-   and the target hours/day.
-2. Get the user's worklogs: JQL `worklogAuthor = currentUser() AND worklogDate >= … AND
-   worklogDate <= …` for the issue list, then `listJiraIssueWorklogs` per issue with
-   epoch bounds; keep only the user's entries.
-3. Get fields for every touched issue in one JQL with `view: "evidence"` (or explicit
-   field IDs): original estimate, time spent (all authors), story points, start date,
-   due date, assignee. Large results may be saved to a file — use `jq`.
-4. Ask about leave/holidays for weekdays with no logs before calling them gaps
-   (or, if calendar is turned on, use its out-of-office events). The user's answer wins.
-5. Write the input JSON and run `scripts/sanity.py` (schema in the script's
-   docstring). It prints the report tables and a list of issues.
-6. Present the report, then the fixes.
+1. Range: "last week" = previous Mon–Fri; "this week" = Mon–today. Target from the
+   prompt, else 7h.
+2. Worklogs: JQL `worklogAuthor = currentUser() AND worklogDate >= … AND worklogDate <= …`,
+   `fields: ["summary"]`; then `listJiraIssueWorklogs` per issue with epoch bounds and
+   `responseFields: ["worklogs.id","worklogs.author.accountId","worklogs.author.displayName","worklogs.timeSpentSeconds","worklogs.started"]`.
+   Keep the user's entries for `worklogs`; sum others' per name for `others`.
+3. Ticket fields, one call: `key in (...)`,
+   `fields: ["summary","duedate","timeoriginalestimate","timespent","<storyPointsId>","<startDateId>"]`.
+   Which are the user's: `key in (...) AND assignee = currentUser()`, `fields: ["summary"]`.
+4. Empty weekdays: ask whether they were leave/holidays (or use calendar
+   out-of-office if calendar is on). The user's answer wins. Today counts as in
+   progress, not a gap.
+5. Write the JSON below to a scratch file and run `python3 scripts/sanity.py <file>`.
+6. Present its output, then the fixes.
 
-## Checks
+### sanity.py input
 
-| Check | Why it matters |
+```json
+{"tz": "Asia/Dubai", "target_hours": 7, "range": ["2026-11-09","2026-11-13"],
+ "leave": ["2026-11-09"], "today": "2026-11-13",
+ "worklogs": [{"id": "10234", "issue": "ABC-77", "started": "2026-11-13T16:16:46.000+0400", "seconds": 180}],
+ "issues": {"ABC-77": {"estimate_s": 288000, "timespent_s": 180, "story_points": null,
+            "start": "2026-10-05", "due": "2026-10-16", "mine": true,
+            "others": {"Priya": 3600}}}}
+```
+
+`worklogs` = the user's entries only; `timespent_s` = all authors, all time.
+Optional: `weekend` (weekday numbers, default [5,6]), `today`, `mine`, `others`.
+
+## Checks (done by the script)
+
+| Check | Why |
 |---|---|
-| Day total vs target (working days only) | Under/over-logging is what reviewers notice first |
+| Day total vs target (working days) | First thing reviewers see |
 | Logs on leave days | Contradicts leave records |
-| Entry date outside ticket Start–Due | Fails "work within the planned window" reviews |
-| Ticket missing estimate / story points / start / due | Breaks sprint & capacity reports |
-| User's own time on a ticket > original estimate | Overrun the user should explain or re-estimate |
-| Ticket total (all authors) > estimate | Informational: note whose time drove it |
-| Very small entries (< 15m) or odd starts (e.g. 16:16:46) | Usually accidental timer logs; ask |
+| Entry outside ticket Start–Due | Fails planned-window reviews |
+| Missing estimate / story points / start / due | Breaks sprint and capacity reports |
+| User's own time > estimate | Overrun to explain or re-estimate |
+| Ticket total > estimate | Informational, with per-person split |
+| Entry < 15m or odd start (16:16:46) | Usually an accidental timer log |
+| Ticket not assigned to the user | Informational; fields belong to the assignee |
 
-## Report format
+## After the report
 
-```
-**<Range> <is clean | needs N fixes>**
-
-| Day | Logged | vs 7h |
-|---|---|---|
-| Mon Nov 9 | — | leave |
-| Wed Nov 11 | 7h | ✅ |
-| Fri Nov 13 | 8h 43m | 🔴 +1h 43m |
-
-| Ticket | Estimate | SP | Start | Due | Your entries in window? |
-|---|---|---|---|---|---|
-
-**Fix**
-1. Delete worklog 10234 (ABC-77, 3m, Nov 13) in Jira — outside window, and the day is over.
-2. ...
-```
-
-End by offering what you can do: re-add entries on the right ticket, fill short
-days (Analyse/Backfill mode), or set missing fields (Fix-fields mode). After the
-user fixes things manually, re-run the check when they say "check now".
+Numbered fixes with worklog IDs (e.g. "Delete worklog 10234 (ABC-77, 3m, Nov 13) in
+Jira — outside window"). Offer: re-add entries on the right ticket, fill short days
+(Analyse/Backfill), set missing fields (Fix fields). Re-run when the user says
+"check now".

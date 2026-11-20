@@ -1,6 +1,6 @@
 {
   "name": "jira-worklog-assistant",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Turn your Slack and Jira activity (optionally Google Calendar) into accurate Jira worklogs, and sanity-check your timesheet against daily targets and ticket dates.",
   "author": {
     "name": "InshadS",
